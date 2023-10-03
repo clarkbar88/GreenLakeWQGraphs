@@ -68,4 +68,60 @@ mc_plot<-data_for_plot %>%
 ggsave(paste0('outputs/mc_plot_',gsub('[()]','',i),'.png'),mc_plot,scale=1.2)
 }
 
+MC_GeoMean_All<-all_mc_data %>%
+  mutate(Year=lubridate::year(CollectDate)) %>%
+  group_by(Year) %>%
+  summarise(Microcystin_GeoMean=round(exp(mean(log(`Microcystin Concentration (µg/L)`))),1),
+            Microcystin_Max=round(max(`Microcystin Concentration (µg/L)`,.9),1))
+MC_GeoMean<-all_mc_data %>%
+  mutate(Year=lubridate::year(CollectDate)) %>%
+  group_by(Year,SampleType) %>%
+  summarise(Microcystin_GeoMean=round(exp(mean(log(`Microcystin Concentration (µg/L)`))),1),
+            Microcystin_Max=round(max(`Microcystin Concentration (µg/L)`,.9),1))
 
+
+mc_plot_with_alum<-all_mc_data %>%
+  mutate(Year=lubridate::year(CollectDate)) %>%
+  left_join(data %>% select(Year,AlumPeriod) %>% distinct()) %>%
+  ggplot(aes(x=Year,y=`Microcystin Concentration (µg/L)`,group=Year))+
+  geom_boxplot(aes(fill=AlumPeriod))+
+  facet_wrap(~SampleType,ncol=1)+
+  geom_hline(yintercept = 8)+
+  geom_point(data=MC_GeoMean,
+             aes(x=Year,y=Microcystin_GeoMean),shape=8)+
+  geom_vline(xintercept = c(2003.5,2015.5),linewidth=2)+
+  scale_x_continuous('',breaks=1989:2023,minor_breaks=NULL)+
+  scale_y_log10('Microcystin (ug/L)',breaks=c(0.05,1,10,100,1000,10000),
+                minor_breaks=c(1:9*.1,1:9,1:9*10,1:9*100,1:9*1000,1:9*10^4),
+                labels=scales::comma)+
+  theme_bw()+
+  theme(axis.text.x=element_text(angle=90,hjust=1,vjust = 0.5,size=10,face='bold'),
+       # axis.text.y=element_blank(),
+        legend.position = 'none')+
+  annotate('text',x=2005,y=5000,label='Alum 2',fontface='bold',hjust=0,vjust=1,size=8)+
+  annotate('text',x=2016,y=5000,label='Alum 3',fontface='bold',hjust=0,vjust=1,size=8)
+
+ggsave(paste0('outputs/mc_plot_with_alum.png'),mc_plot_with_alum,scale=1.2)
+
+mc_plot_with_alum_no_wrap<-all_mc_data %>%
+  mutate(Year=lubridate::year(CollectDate)) %>%
+  left_join(data %>% select(Year,AlumPeriod) %>% distinct()) %>%
+  ggplot(aes(x=Year,y=`Microcystin Concentration (µg/L)`,group=Year))+
+  geom_boxplot(aes(fill=AlumPeriod))+
+ # facet_wrap(~SampleType,ncol=1)+
+  geom_hline(yintercept = 8)+
+  geom_point(data=MC_GeoMean_All,
+             aes(x=Year,y=Microcystin_GeoMean),shape=8)+
+  geom_vline(xintercept = c(2003.5,2015.5),linewidth=2)+
+  scale_x_continuous('',breaks=1989:2023,minor_breaks=NULL)+
+  scale_y_log10('Microcystin (ug/L)',breaks=c(0.05,1,10,100,1000,10000),
+                minor_breaks=c(1:9*.1,1:9,1:9*10,1:9*100,1:9*1000,1:9*10^4),
+                labels=scales::comma)+
+  theme_bw()+
+  theme(axis.text.x=element_text(angle=90,hjust=1,vjust = 0.5,size=10,face='bold'),
+        # axis.text.y=element_blank(),
+        legend.position = 'none')+
+  annotate('text',x=2005,y=5000,label='Alum 2',fontface='bold',hjust=0,vjust=1,size=8)+
+  annotate('text',x=2016,y=5000,label='Alum 3',fontface='bold',hjust=0,vjust=1,size=8)
+
+ggsave(paste0('outputs/mc_plot_with_alum_no_wrap.png'),mc_plot_with_alum_no_wrap,scale=1.2)
